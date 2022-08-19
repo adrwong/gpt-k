@@ -12,19 +12,19 @@
   "per_replica_batch": 1,
   "gradient_accumulation_steps": 16,
 
-  "warmup_steps": 7,
-  "anneal_steps": 65,
+  "warmup_steps": 72,
+  "anneal_steps": 650,
   "lr": 5e-5,
   "end_lr": 1e-5,
   "weight_decay": 0.1,
-  "total_steps": 72,
+  "total_steps": 720,
 
   "tpu_size": 8,
 
-  "bucket": "your-bucket",
-  "model_dir": "finetune_dir",
+  "bucket": "gptj-vanilla",
+  "model_dir": "step_383500",
 
-  "train_set": "example.train.index",
+  "train_set": "gptk.train.index",
   "val_set": {},
 
   "eval_harness_tasks": [
@@ -35,7 +35,7 @@
   "ckpt_every": 72,
   "keep_every": 72,
 
-  "name": "example_model",
-  "wandb_project": "mesh-transformer-jax",
-  "comment": ""
+  "name": "GPTK",
+  "wandb_project": "GPTK-01",
+  "comment": "1st trial"
 }

@@ -144,7 +144,8 @@ def tree_flatten_with_names(pytree, is_leaf, path="", to_id=id):
 
 def tree_leaves_with_names(pytree, to_id=id):
     leaves = jax.tree_leaves(pytree)
-    is_leaf = lambda x: not isinstance(x, list) and to_id(x) in [
+
+    def is_leaf(x): return not isinstance(x, list) and to_id(x) in [
         to_id(x) for x in leaves
     ]
     return tree_flatten_with_names(pytree, is_leaf)
@@ -259,12 +260,13 @@ def read_npz(fpath: FluidPath):
         )
         assert isinstance(
             deserialized, np.lib.npyio.NpzFile
-        ), f"Not an npz file {type(deserialized)=} {f=}"
+        ), f"Not an npz file = {type(deserialized)} = {f} "
         # arrays are only loaded when accessed. So we need to access them before returning
         arrays = []
         for i in deserialized:
             arr = deserialized[i]
-            assert isinstance(arr, np.ndarray), f"Not a np.ndarray {type(arr)=} {f=}"
+            assert isinstance(
+                arr, np.ndarray), f"Not a np.ndarray = {type(arr)} = {f}"
             arrays.append(arr)
         return arrays
 
@@ -318,7 +320,8 @@ def unshard_leave(
         x.dtype = jnp.bfloat16
 
     if DEBUG:
-        print(f"RESHARDING: {leave_name=} {x.shape=} {old_shape=}")  # type: ignore
+        # type: ignore
+        print(f"RESHARDING: = {leave_name} = {x.shape} = {old_shape}")
 
     # transform sharded array to match old_shape
     x = reshard(
@@ -354,14 +357,16 @@ def save_pytree_as_hf(
 
     assert len(old_leave_shapes) == len(
         leave_names
-    ), f"{len(old_leave_shapes)=}  {len(leave_names)=}"
+    ), f"{len(old_leave_shapes)} =  {len(leave_names)} ="
     # get generator that emits all shards of leaves from npz files in reverse order
-    loaded_shards_in = lazy_read_ckpt_shards(input_ckpt, shards_in, reverse=True)
+    loaded_shards_in = lazy_read_ckpt_shards(
+        input_ckpt, shards_in, reverse=True)
 
     print("Reading and transforming layers/shards. This may take a while.")
 
     hf_checkpoint = {}
-    wte_first = None  # saves first instance of a wte weight in order to combine it with the second.
+    # saves first instance of a wte weight in order to combine it with the second.
+    wte_first = None
     # Reverse iteration to grab leave_names and old leaves from the back
     for i in tqdm(
         reversed(range(len(leave_names))),
@@ -409,7 +414,8 @@ def save_pytree_as_hf(
         hf_checkpoint[f"transformer.h.{i}.attn.bias"] = attn_bias_weights
         hf_checkpoint[f"transformer.h.{i}.attn.masked_bias"] = attn_masked_bias_weights
 
-    torch.save(hf_checkpoint, (output_path / "pytorch_model.bin").open(mode="wb"))
+    torch.save(hf_checkpoint, (output_path /
+               "pytorch_model.bin").open(mode="wb"))
 
 
 def save_config_to_hf_format(params: dict, torch_dtype: str, output_path: FluidPath):
@@ -458,7 +464,7 @@ def save_sharded_to_hf_format(
 ):
 
     devices = np.array([jax.devices()[0]]).reshape((1, 1))
-    with maps.mesh(devices, ("dp", "mp")):
+    with maps.Mesh(devices, ("dp", "mp")):
         params_local = params.copy()
         params_local["cores_per_replica"] = maps.thread_resources.env.shape["mp"]
         network = CausalTransformer(params_local)
@@ -481,11 +487,13 @@ if __name__ == "__main__":
     DEBUG = args["debug"]
     start = time.time()
 
-    input_ckpt, config, output_path, np_dtype, torch_dtype = process_args(**args)
+    input_ckpt, config, output_path, np_dtype, torch_dtype = process_args(
+        **args)
     params = json.load(open(config))
     params["optimizer"] = optax.scale(0)
 
-    save_sharded_to_hf_format(input_ckpt, params, output_path, np_dtype, torch_dtype)
+    save_sharded_to_hf_format(
+        input_ckpt, params, output_path, np_dtype, torch_dtype)
     save_config_to_hf_format(params, torch_dtype, output_path)
     print(
         f"HF weights created in {(time.time() - start):.0f}s \"{args['output_path']}\""
