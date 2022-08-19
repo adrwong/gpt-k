@@ -19,7 +19,8 @@ def gpt3_schedule(warmup_steps,
                   end_lr):
     def sch(step):
         warmup_pct = jnp.clip(step, 0, warmup_steps) / warmup_steps
-        anneal_pct = jnp.clip(step - warmup_steps, 0, total_steps) / total_steps
+        anneal_pct = jnp.clip(step - warmup_steps, 0,
+                              total_steps) / total_steps
 
         return warmup_pct * peak_lr - (peak_lr - end_lr) * (1 - jnp.cos(jnp.pi * anneal_pct)) / 2
 
@@ -78,7 +79,8 @@ def additive_weight_decay(weight_decay: float = 0.0) -> GradientTransformation:
         return AdditiveWeightDecayState()
 
     def update_fn(updates, state, params):
-        updates = jax.tree_multimap(lambda g, p: g + weight_decay * p * (len(g.shape) > 1), updates, params)
+        updates = jax.tree_map(
+            lambda g, p: g + weight_decay * p * (len(g.shape) > 1), updates, params)
         return updates, state
 
     return GradientTransformation(init_fn, update_fn)
